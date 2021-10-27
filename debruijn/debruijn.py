@@ -96,7 +96,6 @@ def build_graph(kmer_dict):
         digraph.add_edge(kmer[:-1],kmer[1:],weight=kmer_dict[kmer])
     return digraph
 
-
 def remove_paths(graph, path_list, delete_entry_node, delete_sink_node):
     for path in path_list:
         if delete_entry_node is True and delete_sink_node is True:
@@ -128,7 +127,6 @@ def select_best_path(graph, path_list, path_length, weight_avg_list,
         best_index = randint(0,len(path_list)-1)
         del path_list[best_index]
         return remove_paths(graph,path_list,delete_entry_node,delete_sink_node)
-
 
 def path_average_weight(graph, path):
     return statistics.mean([d["weight"] for (u, v, d) in graph.subgraph(path).edges(data=True)])
@@ -278,6 +276,14 @@ def main():
     """
     # Get arguments
     args = get_arguments()
+
+    dict =build_kmer_dict(args.fastq_file,args.kmer_size)
+    graph = build_graph(dict)
+    graph = simplify_bubbles(graph)
+    graph = solve_entry_tips(graph, get_starting_nodes(graph))
+    graph = solve_out_tips(graph, get_sink_nodes(graph))
+    save_contigs(get_contigs(graph, get_starting_nodes(graph),get_sink_nodes(graph)), args.output_file)
+
 
     # Fonctions de dessin du graphe
     # A decommenter si vous souhaitez visualiser un petit
