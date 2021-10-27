@@ -110,6 +110,8 @@ def remove_paths(graph, path_list, delete_entry_node, delete_sink_node):
     return graph
 
 def std(data):
+    if len(data) == 1:
+        return 0
     return statistics.stdev(data)
 
 def select_best_path(graph, path_list, path_length, weight_avg_list,
@@ -132,34 +134,85 @@ def path_average_weight(graph, path):
     return statistics.mean([d["weight"] for (u, v, d) in graph.subgraph(path).edges(data=True)])
 
 def solve_bubble(graph, ancestor_node, descendant_node):
-    path_list = nx.all_simple_paths(graphe,ancestor_node,descendant_node)
+    path_list = [p for p in nx.all_simple_paths(graph,ancestor_node,descendant_node)]
     path_length = []
     weight_avg_list = []
     for path in path_list:
         path_length.append(len(path))
-        weight_avg_list.append(path_average_weight)
-    return select_best_path(graph, path_list, weight_avg_list)
+        weight_avg_list.append(path_average_weight(graph,path))
+    return select_best_path(graph, path_list, path_length, weight_avg_list)
 
 def simplify_bubbles(graph):
-    pass
+    bubble = False
+    for node in graph.nodes():
+        predecessors_list = [n for n in graph.predecessors(node)]
+        if len(predecessors_list) > 1:
+            for i in range(0,len(predecessors_list)-1):
+                ancestor_node = nx.lowest_common_ancestor(graph,predecessors_list[i],predecessors_list[i+1])
+                if ancestor_node != None:
+                    bubble = True
+                    break
+            if bubble == True:
+                break
+    if bubble == True:
+        graph = simplify_bubbles(solve_bubble(graph,ancestor_node,node))
+    return graph
 
 def solve_entry_tips(graph, starting_nodes):
-    pass
+    for node in graph.nodes():
+        path_list = []
+        path_length = []
+        weight_avg_list = []
+        tip = False
+        predecessors_list = [n for n in graph.predecessors(node)]
+        if len(predecessors_list) > 1:
+            for st_node in starting_nodes:
+                if nx.has_path(graph, st_node, node):
+                    path = [n for n in nx.all_simple_paths(graph, st_node, node)]
+                    path_list.append(path[0])
+                    path_length.append(len(path[0]))
+                    weight_avg_list.append(path_average_weight(graph,path[0]))
+                    tip = True
+        if tip is True:
+            break
+    if tip is True:
+        graph = select_best_path(graph, path_list, path_length, weight_avg_list, delete_entry_node=True)
+        solve_entry_tips(graph,starting_nodes)
+    return graph
 
 def solve_out_tips(graph, ending_nodes):
-    pass
+    for node in graph.nodes():
+        path_list = []
+        path_length = []
+        weight_avg_list = []
+        tip = False
+        successors_list = [n for n in graph.successors(node)]
+        if len(successors_list) > 1:
+            for en_node in ending_nodes:
+                if nx.has_path(graph, node, en_node):
+                    path = [n for n in nx.all_simple_paths(graph, node, en_node)]
+                    path_list.append(path[0])
+                    path_length.append(len(path[0]))
+                    weight_avg_list.append(path_average_weight(graph,path[0]))
+                    tip = True
+        if tip is True:
+            break
+    if tip is True:
+        graph = select_best_path(graph, path_list, path_length, weight_avg_list, delete_sink_node=True)
+        solve_out_tips(graph,ending_nodes)
+    return graph
 
 def get_starting_nodes(graph):
     node_list = []
     for node in graph.nodes():
-        if(len([p for p in graph.predecessors(node)]) == 0):
+        if len([p for p in graph.predecessors(node)]) == 0:
             node_list.append(node)
     return node_list
 
 def get_sink_nodes(graph):
     node_list = []
     for node in graph.nodes():
-        if(len([p for p in graph.successors(node)]) == 0):
+        if len([p for p in graph.successors(node)]) == 0:
             node_list.append(node)
     return node_list
 
@@ -167,7 +220,7 @@ def get_contigs(graph, starting_nodes, ending_nodes):
     result = []
     for st_node in starting_nodes:
         for en_node in ending_nodes:
-            if(nx.has_path(graph,st_node,en_node) is False):
+            if nx.has_path(graph,st_node,en_node) is False:
                 break
             for n in nx.all_simple_paths(graph,st_node,en_node):
                 contig = n[0]
