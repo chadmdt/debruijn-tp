@@ -72,34 +72,19 @@ def read_fastq(fastq_file):
         i = 0
         for line in file:
             i += 1
-            if(i%2==0 and i%4!=0):
-                yield(line.rstrip())
+            if i%2==0 and i%4!=0:
+                yield line.rstrip()
 
 def cut_kmer(read, kmer_size):
     for i in range(0,len(read)-kmer_size+1):
         yield read[i:i+kmer_size]
 
-"""
-k = 30
-    # découpe la séquence en morceaux de longueur k
-    for i, _ in enumerate (seq[:len(seq)-k+1]):
-        kmer = seq[i:i+k]
-        #vérifie si ces k-mer sont présents dans le dictionnaire
-        val = dcty.pop(kmer, None)
-        # il reprend la liste d'identificateurs précédentes et ajoute le nouveau
-        if(val != None):
-            val.append(ide)
-            dcty[kmer] = val
-        # il ajoute le k-mer et son identificateur dans le dictionnaire
-        else:
-            dcty[kmer] = [ide]
-"""
 def build_kmer_dict(fastq_file, kmer_size):
     dict = {}
     for line in read_fastq(fastq_file):
         for kmer in cut_kmer(line, kmer_size):
             occ = dict.pop(kmer, None)
-            if(occ != None):
+            if occ != None:
                 dict[kmer] = occ + 1
             else:
                 dict[kmer] = 1
@@ -147,7 +132,13 @@ def path_average_weight(graph, path):
     return statistics.mean([d["weight"] for (u, v, d) in graph.subgraph(path).edges(data=True)])
 
 def solve_bubble(graph, ancestor_node, descendant_node):
-    pass
+    path_list = nx.all_simple_paths(graphe,ancestor_node,descendant_node)
+    path_length = []
+    weight_avg_list = []
+    for path in path_list:
+        path_length.append(len(path))
+        weight_avg_list.append(path_average_weight)
+    return select_best_path(graph, path_list, weight_avg_list)
 
 def simplify_bubbles(graph):
     pass
@@ -235,9 +226,6 @@ def main():
     # Get arguments
     args = get_arguments()
 
-    read_fastq(args.fastq_file)
-    cut_kmer('ATATTGAGATATTAGD',5)
-    build_kmer_dict(args.fastq_file,5)
     # Fonctions de dessin du graphe
     # A decommenter si vous souhaitez visualiser un petit
     # graphe
