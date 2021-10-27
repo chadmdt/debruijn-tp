@@ -108,7 +108,7 @@ def build_kmer_dict(fastq_file, kmer_size):
 def build_graph(kmer_dict):
     digraph = nx.DiGraph()
     for kmer in kmer_dict.keys():
-        digraph.add_edge(kmer[0:len(kmer)-1],kmer[1:],weight=kmer_dict[kmer])
+        digraph.add_edge(kmer[:-1],kmer[1:],weight=kmer_dict[kmer])
     return digraph
 
 
@@ -139,16 +139,39 @@ def solve_out_tips(graph, ending_nodes):
     pass
 
 def get_starting_nodes(graph):
-    pass
+    node_list = []
+    for node in graph.nodes():
+        if(len([p for p in graph.predecessors(node)]) == 0):
+            node_list.append(node)
+    return node_list
 
 def get_sink_nodes(graph):
-    pass
+    node_list = []
+    for node in graph.nodes():
+        if(len([p for p in graph.successors(node)]) == 0):
+            node_list.append(node)
+    return node_list
 
 def get_contigs(graph, starting_nodes, ending_nodes):
-    pass
+    result = []
+    for st_node in starting_nodes:
+        for en_node in ending_nodes:
+            if(nx.has_path(graph,st_node,en_node) == False):
+                break
+            for n in nx.all_simple_paths(graph,st_node,en_node):
+                contig = n[0]
+                for i in range(1,len(n)):
+                    kmer = n[i]
+                    contig += kmer[-1]
+                result.append([contig,len(contig)])
+    return result
 
 def save_contigs(contigs_list, output_file):
-    pass
+    with open(output_file, "w") as file:
+        for i,element in enumerate(contigs_list):
+            file.write('>contig_'+str(i)+' len='+str(element[1])+'\n')
+            file.write(fill(element[0]))
+            file.write('\n')
 
 
 def fill(text, width=80):
@@ -179,7 +202,7 @@ def save_graph(graph, graph_file):
     """Save the graph with pickle
     """
     with open(graph_file, "wt") as save:
-            pickle.dump(graph, save)
+        pickle.dump(graph, save)
 
 
 #==============================================================
