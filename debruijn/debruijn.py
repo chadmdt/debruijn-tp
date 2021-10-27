@@ -113,18 +113,38 @@ def build_graph(kmer_dict):
 
 
 def remove_paths(graph, path_list, delete_entry_node, delete_sink_node):
-    pass
+    for path in path_list:
+        if delete_entry_node is True and delete_sink_node is True:
+            graph.remove_nodes_from(path)
+        elif delete_entry_node is True and delete_sink_node is False:
+            graph.remove_nodes_from(path[:-1])
+        elif delete_entry_node is False and delete_sink_node is True:
+            graph.remove_nodes_from(path[1:])
+        else:
+            graph.remove_nodes_from(path[1:-1])
+    return graph
 
 def std(data):
-    pass
-
+    return statistics.stdev(data)
 
 def select_best_path(graph, path_list, path_length, weight_avg_list,
                      delete_entry_node=False, delete_sink_node=False):
-    pass
+    if std(weight_avg_list) > 0:
+        best_index = weight_avg_list.index(max(weight_avg_list))
+        del path_list[best_index]
+        return remove_paths(graph,path_list,delete_entry_node,delete_sink_node)
+    elif std(path_length) > 0:
+        best_index = path_length.index(max(path_length))
+        del path_list[best_index]
+        return remove_paths(graph,path_list,delete_entry_node,delete_sink_node)
+    else:
+        best_index = randint(0,len(path_list)-1)
+        del path_list[best_index]
+        return remove_paths(graph,path_list,delete_entry_node,delete_sink_node)
+
 
 def path_average_weight(graph, path):
-    pass
+    return statistics.mean([d["weight"] for (u, v, d) in graph.subgraph(path).edges(data=True)])
 
 def solve_bubble(graph, ancestor_node, descendant_node):
     pass
@@ -156,7 +176,7 @@ def get_contigs(graph, starting_nodes, ending_nodes):
     result = []
     for st_node in starting_nodes:
         for en_node in ending_nodes:
-            if(nx.has_path(graph,st_node,en_node) == False):
+            if(nx.has_path(graph,st_node,en_node) is False):
                 break
             for n in nx.all_simple_paths(graph,st_node,en_node):
                 contig = n[0]
