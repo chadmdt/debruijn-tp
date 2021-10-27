@@ -24,13 +24,13 @@ random.seed(9001)
 from random import randint
 import statistics
 
-__author__ = "Your Name"
+__author__ = "Charlotte des Mares de Trébons"
 __copyright__ = "Universite Paris Diderot"
-__credits__ = ["Your Name"]
+__credits__ = ["Charlotte des Mares de Trébons"]
 __license__ = "GPL"
 __version__ = "1.0.0"
-__maintainer__ = "Your Name"
-__email__ = "your@email.fr"
+__maintainer__ = "Charlotte des Mares de Trébons"
+__email__ = "chadmdt@outlook.fr"
 __status__ = "Developpement"
 
 def isfile(path):
@@ -68,19 +68,48 @@ def get_arguments():
 
 
 def read_fastq(fastq_file):
-    pass
-
+    with open(fastq_file) as file:
+        i = 0
+        for line in file:
+            i += 1
+            if(i%2==0 and i%4!=0):
+                yield(line.rstrip())
 
 def cut_kmer(read, kmer_size):
-    pass
+    for i in range(0,len(read)-kmer_size+1):
+        yield read[i:i+kmer_size]
 
-
+"""
+k = 30
+    # découpe la séquence en morceaux de longueur k
+    for i, _ in enumerate (seq[:len(seq)-k+1]):
+        kmer = seq[i:i+k]
+        #vérifie si ces k-mer sont présents dans le dictionnaire
+        val = dcty.pop(kmer, None)
+        # il reprend la liste d'identificateurs précédentes et ajoute le nouveau
+        if(val != None):
+            val.append(ide)
+            dcty[kmer] = val
+        # il ajoute le k-mer et son identificateur dans le dictionnaire
+        else:
+            dcty[kmer] = [ide]
+"""
 def build_kmer_dict(fastq_file, kmer_size):
-    pass
-
+    dict = {}
+    for line in read_fastq(fastq_file):
+        for kmer in cut_kmer(line, kmer_size):
+            occ = dict.pop(kmer, None)
+            if(occ != None):
+                dict[kmer] = occ + 1
+            else:
+                dict[kmer] = 1
+    return dict
 
 def build_graph(kmer_dict):
-    pass
+    digraph = nx.DiGraph()
+    for kmer in kmer_dict.keys():
+        digraph.add_edge(kmer[0:len(kmer)-1],kmer[1:],weight=kmer_dict[kmer])
+    return digraph
 
 
 def remove_paths(graph, path_list, delete_entry_node, delete_sink_node):
@@ -90,7 +119,7 @@ def std(data):
     pass
 
 
-def select_best_path(graph, path_list, path_length, weight_avg_list, 
+def select_best_path(graph, path_list, path_length, weight_avg_list,
                      delete_entry_node=False, delete_sink_node=False):
     pass
 
@@ -128,7 +157,7 @@ def fill(text, width=80):
 
 def draw_graph(graph, graphimg_file):
     """Draw the graph
-    """                                    
+    """
     fig, ax = plt.subplots()
     elarge = [(u, v) for (u, v, d) in graph.edges(data=True) if d['weight'] > 3]
     #print(elarge)
@@ -139,7 +168,7 @@ def draw_graph(graph, graphimg_file):
     pos = nx.random_layout(graph)
     nx.draw_networkx_nodes(graph, pos, node_size=6)
     nx.draw_networkx_edges(graph, pos, edgelist=elarge, width=6)
-    nx.draw_networkx_edges(graph, pos, edgelist=esmall, width=6, alpha=0.5, 
+    nx.draw_networkx_edges(graph, pos, edgelist=esmall, width=6, alpha=0.5,
                            edge_color='b', style='dashed')
     #nx.draw_networkx(graph, pos, node_size=10, with_labels=False)
     # save image
@@ -163,8 +192,11 @@ def main():
     # Get arguments
     args = get_arguments()
 
+    read_fastq(args.fastq_file)
+    cut_kmer('ATATTGAGATATTAGD',5)
+    build_kmer_dict(args.fastq_file,5)
     # Fonctions de dessin du graphe
-    # A decommenter si vous souhaitez visualiser un petit 
+    # A decommenter si vous souhaitez visualiser un petit
     # graphe
     # Plot the graph
     # if args.graphimg_file:
